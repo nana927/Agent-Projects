@@ -105,30 +105,30 @@
 
 ```
                          ┌─────────────────────────────┐
-                         │       Frontend (React)        │
+                         │       Frontend (React)      │
                          └─────────────┬───────────────┘
                                        │ HTTP / SSE
                          ┌─────────────▼───────────────┐
-                         │    FastAPI (api/v1/)          │
-                         │  路由层：请求接收 & 参数校验    │
+                         │    FastAPI (api/v1/)        │
+                         │  路由层：请求接收 & 参数校验  │
                          └─────────────┬───────────────┘
                                        │
               ┌────────────────────────┼────────────────────────┐
               │                        │                        │
     ┌─────────▼─────────┐  ┌──────────▼──────────┐  ┌─────────▼─────────┐
     │   QA Graph        │  │   Main Graph        │  │   Memory Pipeline │
-    │  (QA 问答 Agent)   │  │  (测试任务 Agent)    │  │  (记忆管理 Pipeline)│
-    │  LangGraph 编排    │  │  LangGraph 编排      │  │  离线异步任务       │
-    └─────────┬─────────┘  └──────────┬──────────┘  └─────────┬─────────┘
-              │                        │                        │
+    │  (QA 问答 Agent)   │  │  LangGraph 编       │  │  (记忆管理 Pipeline)│
+    │  LangGraph 编排    │  │                     │  │  离线异步任务       │
+    └─────────┬─────────┘  └──────────┬──────────┘   └─────────┬─────────┘
+              │                       │                       │
     ┌─────────▼─────────┐  ┌──────────▼──────────┐  ┌─────────▼─────────┐
-    │   Services         │  │   Tools & Skills    │  │   Memory Store    │
-    │  业务逻辑层         │  │  可编排工具节点      │  │  FAISS / Milvus   │
+    │   Services        │  │   Tools & Skills    │  │   Memory Store    │
+    │  业务逻辑层        │  │  可编排工具节点      │  │  FAISS / Milvus   │
     └─────────┬─────────┘  └──────────┬──────────┘  │  / SQLite         │
-              │                        │             └───────────────────┘
+              │                       │             └───────────────────┘
     ┌─────────▼─────────┐  ┌──────────▼──────────┐
-    │   RAG Engine       │  │   Workflow Engine   │
-    │  向量检索 + 生成    │  │  自动规划 + 执行     │
+    │   RAG Engine      │  │   Workflow Engine   │
+    │  向量检索 + 生成   │   │  自动规划 + 执行     │
     └───────────────────┘  └─────────────────────┘
 ```
 
@@ -224,14 +224,14 @@ backend/
 │ intent_cls   │    │ history_reuse│    │ plan_retrieval│
 └──────────────┘    └──────────────┘    └──────┬───────┘
                                                │
-                    ┌──────────────────────────┘
-                    ▼
-┌──────────────┐    ┌──────────────┐    ┌──────────────┐
+                        ┌──────────────────────┘
+                        ▼
+┌──────────────┐     ┌──────────────┐      ┌──────────────┐
 │ ⑦ Query 增强  │───▶│ ⑧ 多路检索    │───▶│ ⑨ 答案生成    │
-│ query_enhance│    │ retrieve     │    │ answer       │
-└──────────────┘    └──────────────┘    └──────┬───────┘
-                                               │
-                    ┌──────────────────────────┘
+│ query_enhance│     │ retrieve     │      │ answer       │
+└──────────────┘     └──────────────┘      └──────┬───────┘
+                                                  │
+                    ┌─────────────────────────────┘
                     ▼
 ┌──────────────┐    ┌──────────────┐    ┌──────────────┐
 │ ⑩ 答案评估    │───▶│ ⑪ 追问生成    │───▶│ ⑫ 记忆提取    │
@@ -255,9 +255,6 @@ backend/
 | **记忆融合** | 会话开始时从 Memory Store 召回用户 Profile 和历史上下文（节点②）；回答前检测历史相似问题复用（节点⑤）；回答后将关键信息提取为记忆持久化（节点⑫），形成"召回 → 复用 → 沉淀"的闭环 |
 
 ### 与 Memory 模块的集成
-
-QA Graph 中 **3 个节点**直接与 Memory Pipeline 交互，实现记忆的生命周期管理：
-
 ```
 会话开始                     问答结束
    │                           │
@@ -500,8 +497,11 @@ generated_test_cases.xlsx（干净输出）
 <img width="2559" height="1013" alt="image" src="https://github.com/user-attachments/assets/8d54a551-8ff7-4196-91f3-3ef6a9b69836" />
 <img width="2524" height="1348" alt="image" src="https://github.com/user-attachments/assets/974781fb-dff8-4ef4-bf5e-0907f9427d0e" />
 
+#### skill展示
 
 
+
+#### 测试用例生成
 <img width="1741" height="1019" alt="image" src="https://github.com/user-attachments/assets/c50e2860-1768-4947-a8c0-17f729906e8d" />
 <img width="2000" height="1097" alt="image" src="https://github.com/user-attachments/assets/cc2fadc1-3030-4a12-a6f3-2dc55425c026" />
 <img width="1332" height="1082" alt="image" src="https://github.com/user-attachments/assets/fbc3e187-edc3-4e55-89b9-420481b99aed" />
@@ -581,26 +581,6 @@ ScriptToolRunner（安全沙箱）
 
 ---
 
-## 快速启动
-
-```bash
-# 1. 安装依赖
-cd backend
-pip install -r requirements.txt
-
-# 2. 配置环境变量（复制 .env 并修改）
-#   DATABASE_URL=sqlite:///./data/app.db
-#   LLM_API_KEY=your-api-key
-#   LLM_BASE_URL=https://your-llm-endpoint
-
-# 3. 启动后端
-uvicorn app.main:app --reload --port 8000
-
-# 4. 访问 API 文档
-# http://localhost:8000/docs
-```
-
----
 
 ## 项目亮点
 
